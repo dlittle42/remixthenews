@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  ul#headlines
+  button#btn Send
+  script(src='http://code.jquery.com/jquery-3.1.1.js')
+  script(src="/socket.io/socket.io.js")
+  script.
+    var socket = io('//localhost:3000');
+    socket.on('socketToMe', function (data) {
+      console.log(data);
+      $.each(data, function() {
+            $('#headlines').append('<li>' + this + '</li>');
+        });
+    });
+    document.getElementById("btn").addEventListener("click", function(){
+    	console.log('clicked');
+    	socket.emit('event', { message: 'Hey, I have an important message!' });
+    });
+    
