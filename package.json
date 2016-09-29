@@ -15,8 +15,10 @@
     "jquery": "^3.1.1",
     "morgan": "~1.7.0",
     "phantomjs": "^2.1.7",
+    "pos": "^0.4.2",
     "serve-favicon": "~2.3.0",
     "socket.io": "^1.4.8",
+    "speakeasy-nlp": "^0.2.2",
     "x-ray": "^2.0.2",
     "x-ray-phantom": "^1.0.1"
   }

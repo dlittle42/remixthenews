@@ -102,24 +102,72 @@ function scrapeNews(url) {
 
 
 var urls = [
-  ['http://www.nytimes.com/','h1 a'],
+  //['http://www.nytimes.com/','h1 a'],
+ // ['http://www.nytimes.com/','.lede a'],
+  ['http://www.nytimes.com/','#top-news a'],
   ['http://www.cnn.com/', '.cd__headline-text'],
   ['http://www.wsj.com/', '.wsj-headline-link'],
-  ['http://www.foxnews.com/', '.primary h1 a'],
+ // ['http://www.foxnews.com/', '.primary h1 a'],
   ['http://www.washingtonpost.com/', '.headline a'],
   ['http://www.bbc.com/news/', '#comp-top-story-1 .title-link__title-text']
 ];
 
 var promises = urls.map(scrapeNews);
+var newsPosArr = [];
 
 Promise.all(promises)
-  .then(function(images) {
-    console.log('All news loaded', images);
+  .then(function(headlines) {
+    console.log('All news loaded', headlines);
+    getPOS(headlines)
+
     io.on('connection', function(socket) { 
-      socket.emit('socketToMe', images );
+      socket.emit('socketToMe', headlines );
     });
   })
   .catch(function(err) {
     console.error(err);
   });
 
+function getPOS(texts){
+  var pos = require('pos');
+  var news = texts;
+  for (var n in news){
+  //  console.log(news[n])
+    var title = news[n];
+    var words = new pos.Lexer().lex(title);
+    var taggedWords = new pos.Tagger().tag(words);
+   // console.dir(taggedWords)
+    newsPosArr.push([ urls[n][0], title, taggedWords]);
+    /*
+    for (i in taggedWords) {
+        var taggedWord = taggedWords[i];
+        var word = taggedWord[0];
+        var tag = taggedWord[1];
+
+        console.log(word + " /" + tag);
+    }
+    */
+  }
+  console.log('------------------------')
+  console.log(newsPosArr)
+  /*
+  var speak = require('speakeasy-nlp');
+  console.log(speak.classify('NJ commuter train hit platform'));
+  console.log('------------------------')
+  */
+/*
+  for (var n in news){
+    console.log(news(n))
+    var words = new pos.Lexer().lex(news(n));
+    var taggedWords = new pos.Tagger().tag(words);
+    console.dir(taggedWords)
+    for (i in taggedWords) {
+        var taggedWord = taggedWords[i];
+        var word = taggedWord[0];
+        var tag = taggedWord[1];
+
+        console.log(word + " /" + tag);
+    }
+  }
+*/
+}
