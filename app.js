@@ -104,7 +104,7 @@ function scrapeNews(url) {
 var urls = [
   //['http://www.nytimes.com/','h1 a'],
  // ['http://www.nytimes.com/','.lede a'],
-  ['http://www.nytimes.com/','#top-news a'],
+  ['http://www.nytimes.com/','#top-news .story-heading a'],
   ['http://www.cnn.com/', '.cd__headline-text'],
   ['http://www.wsj.com/', '.wsj-headline-link'],
  // ['http://www.foxnews.com/', '.primary h1 a'],
@@ -114,6 +114,8 @@ var urls = [
 
 var promises = urls.map(scrapeNews);
 var newsPosArr = [];
+var matches = [];
+var tagArr =[];
 
 Promise.all(promises)
   .then(function(headlines) {
@@ -136,7 +138,7 @@ function getPOS(texts){
     var title = news[n];
     var words = new pos.Lexer().lex(title);
     var taggedWords = new pos.Tagger().tag(words);
-   // console.dir(taggedWords)
+    console.dir(taggedWords)
     newsPosArr.push([ urls[n][0], title, taggedWords]);
     /*
     for (i in taggedWords) {
@@ -150,6 +152,20 @@ function getPOS(texts){
   }
   console.log('------------------------')
   console.log(newsPosArr)
+/*
+  console.log('------------------------')
+  console.log('------------------------')
+  console.log('------------------------')
+  console.log(newsPosArr[0][2][1][0])
+*/
+console.log('------------------------>>>')
+  tagArr = chooseRandomModel(newsPosArr);
+  //console.log("============   RANDOM  STRUCTURE  ================")
+  //console.log(tagArr)
+  //console.log("============   END RANDOM  STRUCTURE  ================")
+  console.log('++++++++++++++')
+  console.log(buildPos(newsPosArr, tagArr));
+
   /*
   var speak = require('speakeasy-nlp');
   console.log(speak.classify('NJ commuter train hit platform'));
@@ -170,4 +186,82 @@ function getPOS(texts){
     }
   }
 */
+}
+
+function chooseRandomModel(arr){
+  // choose random headline as sentence model.
+  // 
+  var len = getRandomInt(0, arr.length-1);
+  return arr[len][2];
+}
+
+function buildPos(news, pos){
+  // loop through each headline array looking for POS match 
+  //var matches= [];
+
+  for (v in pos){
+
+    var word = pos[v][0];
+    
+    var term = [];
+    term.push(word);
+    
+
+console.log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
+
+    for (var n in news){
+    
+      var words = news[n][2];
+     // console.log(words)
+      for (i in words) {
+          var wordPos = words[i][1];
+          if (wordPos == pos[v][1]) {
+            var matchWord = words[i][0];
+            var tag = wordPos;
+            console.log(matchWord + " /" + tag);
+            term.push(matchWord);
+          }
+          
+
+          
+      }
+    }
+    matches.push(term);
+
+  }
+
+  console.log("************      MATCHES     **********************    ");
+  console.log(matches);
+      console.log("============   RANDOM  STRUCTURE  ================")
+  console.log(tagArr)
+  console.log("============   END RANDOM  STRUCTURE  ================")
+  console.log("************      MAKE SENTENCE     **********************    ");
+  buildHeadline(matches);
+
+
+}
+
+function generateHeadline(){
+  
+}
+
+function buildHeadline(matches){
+  // choose random word from each POS array
+  console.log(matches.length);
+  var newHeadline= [];
+  for (var n in matches){
+    
+    var len = getRandomInt(0, matches[n].length-1);
+    console.log("-- len = "+ len);
+    console.log(matches[n][len]);
+    newHeadline.push(matches[n][len]);
+
+  }
+  console.log(newHeadline.join(" "));
+  return newHeadline;
+}
+
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
