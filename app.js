@@ -75,6 +75,8 @@ io.on('connection', function(socket) {
 
     socket.on('event', function(data) {
         console.log('A client sent us this dumb message:', data.message);
+        var remix  = generateHeadline();
+        socket.emit('sendRemix', remix.toString());
     });
 });
 
@@ -115,7 +117,7 @@ var urls = [
 var promises = urls.map(scrapeNews);
 var newsPosArr = [];
 var matches = [];
-var tagArr =[];
+//var tagArr =[];
 
 Promise.all(promises)
   .then(function(headlines) {
@@ -125,6 +127,14 @@ Promise.all(promises)
     io.on('connection', function(socket) { 
       socket.emit('socketToMe', headlines );
     });
+  }).then(function() {
+    console.log('step two');
+    var remix = generateHeadline();
+    io.on('connection', function(socket) { 
+      socket.emit('sendRemix', remix.toString());
+    });
+
+
   })
   .catch(function(err) {
     console.error(err);
@@ -159,12 +169,12 @@ function getPOS(texts){
   console.log(newsPosArr[0][2][1][0])
 */
 console.log('------------------------>>>')
-  tagArr = chooseRandomModel(newsPosArr);
+ // tagArr = chooseRandomModel(newsPosArr);
   //console.log("============   RANDOM  STRUCTURE  ================")
   //console.log(tagArr)
   //console.log("============   END RANDOM  STRUCTURE  ================")
   console.log('++++++++++++++')
-  console.log(buildPos(newsPosArr, tagArr));
+ // console.log(buildPos(newsPosArr, tagArr));
 
   /*
   var speak = require('speakeasy-nlp');
@@ -233,22 +243,33 @@ console.log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
   console.log("************      MATCHES     **********************    ");
   console.log(matches);
       console.log("============   RANDOM  STRUCTURE  ================")
-  console.log(tagArr)
+ // console.log(tagArr)
   console.log("============   END RANDOM  STRUCTURE  ================")
-  console.log("************      MAKE SENTENCE     **********************    ");
-  buildHeadline(matches);
+
+
+  return matches;
 
 
 }
 
 function generateHeadline(){
-  
+  matches = []
+  var tagArr = chooseRandomModel(newsPosArr);
+  console.log("============   RANDOM  STRUCTURE  ================")
+  console.log(tagArr)
+  buildPos(newsPosArr, tagArr);
+  console.log("************      MAKE SENTENCE     **********************    ");
+  var remix = buildHeadline(matches);
+
+ return remix;
+ 
 }
 
 function buildHeadline(matches){
   // choose random word from each POS array
   console.log(matches.length);
   var newHeadline= [];
+  console.log("NEW HEADLINE ARR RESET??? "+ newHeadline)
   for (var n in matches){
     
     var len = getRandomInt(0, matches[n].length-1);
@@ -258,7 +279,7 @@ function buildHeadline(matches){
 
   }
   console.log(newHeadline.join(" "));
-  return newHeadline;
+  return newHeadline.join(" ");
 }
 
 

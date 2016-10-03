@@ -15,6 +15,12 @@ block content
             $('#headlines').append('<li>' + this + '</li>');
         });
     });
+
+    socket.on('sendRemix', function (data) {
+      console.log(data);
+      $('h1').text(data);
+     
+    });
     document.getElementById("btn").addEventListener("click", function(){
     	console.log('clicked');
     	socket.emit('event', { message: 'Hey, I have an important message!' });
