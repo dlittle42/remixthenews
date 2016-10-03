@@ -102,6 +102,29 @@ function scrapeNews(url) {
   });
 }
 
+function scrapeSingleSite(url){
+  var headlines = [];
+  x("http://www.nytimes.com/", '.theme-summary .story-heading', [{
+     title: '@text'
+   }])((err, obj) => {
+     if(err) {
+       callback(err);
+     }
+     else {
+      // obj.forEach((item) => {
+      for (var n=0; n< 5; n++){
+         //console.log(obj[n].title);
+         headlines.push(obj[n].title);
+       }
+       console.log(headlines);
+       callback(null, obj) // do something with the objects?
+     }   
+   })
+}
+
+
+
+
 
 var urls = [
   //['http://www.nytimes.com/','h1 a'],
@@ -114,6 +137,10 @@ var urls = [
   ['http://www.bbc.com/news/', '#comp-top-story-1 .title-link__title-text']
 ];
 
+
+
+//// Run Promise to scrape 5 sites 0r....
+/*
 var promises = urls.map(scrapeNews);
 var newsPosArr = [];
 var matches = [];
@@ -139,6 +166,12 @@ Promise.all(promises)
   .catch(function(err) {
     console.error(err);
   });
+*/
+
+
+/// .... or just call one site for 5 headlines
+scrapeSingleSite();
+
 
 function getPOS(texts){
   var pos = require('pos');
@@ -286,3 +319,5 @@ function buildHeadline(matches){
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+
