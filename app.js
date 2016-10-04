@@ -76,7 +76,6 @@ app.use(function(err, req, res, next) {
 
 io.on('connection', function(socket) {  
 
-   // socket.emit('sendHeadlines', 'A new user has joined!' );
     scrapeMultiple();
 
     socket.on('event', function(data) {
@@ -95,13 +94,7 @@ io.on('connection', function(socket) {
         console.log('A client sent us this dumb message:', data.message);
         scrapeMultiple();
     });
-/*
-    socket.on('single', function(data) {
-        console.log('From single function', data.message);
-        var remix  = generateHeadline(newsPosArr);
-        socket.emit('sendRemix', remix.toString());
-    });
-    */
+
 });
 
 module.exports = {app: app, server: server};
@@ -130,38 +123,12 @@ function scrapeMultiple(){
     .then(function(headlines) {
       console.log('All news loaded', headlines);
       newsPosArr = getPOS(headlines);
-
-
-      console.log(Object.keys(io.sockets.connected).length);
-/*
-      if(isConnected()){
-        socket.emit('sendHeadlines', headlines );
-      }else{
-        io.on('connection', function(socket) { 
-
-          console.log("NOW??"+Object.keys(io.sockets.connected).length);
-          socket.emit('sendHeadlines', headlines );
-        });
-      }
-      */
-
       io.emit('sendHeadlines', headlines );
       
     }).then(function() {
       log('step two');
       var remix = generateHeadline(newsPosArr);
-      /*
-      if(isConnected()){
-        socket.emit('sendRemix', remix.toString());
-      }else{
-        io.on('connection', function(socket) { 
-          socket.emit('sendRemix', remix.toString());
-        });
-      }
-      */
       io.emit('sendRemix', remix.toString());
-      
-
 
     })
     .catch(function(err) {
@@ -172,6 +139,7 @@ function scrapeMultiple(){
 
 }
 
+/*
 function isConnected(){
   if (Object.keys(io.sockets.connected).length >0 ){
     return true;
@@ -179,6 +147,7 @@ function isConnected(){
     return false;
   }
 }
+*/
 
 
 function scrapeNews(url) {
@@ -216,30 +185,13 @@ function scrapeSingle(url){
        newsPosArr = getPOS(headlines);
        var remix = generateHeadline(newsPosArr);
        //console.log(remix);
-  /*
-       if(isConnected()){
-          console.log('ALREADY CONNECTED!!!!')
-          socket.emit('sendRemix', remix.toString());
-          socket.emit('sendHeadlines', headlines );
-       }else{
-        
-       
-         io.on('connection', function(socket) { 
-          socket.emit('sendRemix', remix.toString());
-          socket.emit('sendHeadlines', headlines );
-
-        });
-       }
-       */
+  
        io.emit('sendRemix', remix.toString());
-          io.emit('sendHeadlines', headlines );
+       io.emit('sendHeadlines', headlines );
        callback(null, headlines) // do something with the objects?
      }   
    })
 }
-
-/// .... or just call one site for 5 headlines
-//scrapeSingle();
 
 
 function getPOS(texts){
@@ -304,8 +256,8 @@ function buildPos(news, pos){
 
   }
 
-  //console.log("************      MATCHES     **********************    ");
- // console.log(matches);
+  log("************      MATCHES     **********************    ");
+  log(matches);
 
 
   return matches;
@@ -332,16 +284,6 @@ function buildHeadline(matches){
   var newHeadline= [];
   log("NEW HEADLINE ARR RESET??? "+ newHeadline)
   for (var n in matches){
-    /*
-    var len = getRandomInt(0, matches[n].length-1);
-    console.log("-- len = "+ len);
-    console.log(matches[n][len]);
-    var nextWord = matches[n][len];
-    while (newHeadline.indexOf(nextWord) != 1) {
-        text += "The number is " + i;
-        i++;
-    }
-    */
 
     // eliminate duplicate terms in new sentence
     do {
@@ -350,13 +292,8 @@ function buildHeadline(matches){
       log(matches[n][len]);
       var nextWord = matches[n][len];
     } while (newHeadline.indexOf(nextWord) != -1);
-  //  if (newHeadline.indexOf(nextWord) != 1 ){
-
-      newHeadline.push(nextWord);
-  //  }else{
-  //    console.log('Duplicate Word! '+ nextWord)
-  //  }
     
+    newHeadline.push(nextWord);
 
   }
   console.log(newHeadline.join(" "));
@@ -374,7 +311,7 @@ function log(val){
 
 
  //// Run Promise to scrape 5 sites 0r....
-scrapeMultiple();
+//scrapeMultiple();
 
 /// .... or just call one site for 5 headlines
 //scrapeSingle();
