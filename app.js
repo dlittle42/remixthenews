@@ -22,6 +22,7 @@ var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
 var debug = false;
+var newsPosArr = [];
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -76,7 +77,7 @@ app.use(function(err, req, res, next) {
 
 io.on('connection', function(socket) {  
 
-    scrapeMultiple();
+    getMultipleSources();
 
     socket.on('event', function(data) {
         console.log('A client sent us this dumb message:', data.message);
@@ -87,12 +88,12 @@ io.on('connection', function(socket) {
 
     socket.on('getSingleSource', function(data) {
         console.log('A client sent us this dumb message:', data.message);
-        scrapeSingle();
+        getSingleSource();
     });
 
     socket.on('getMultipleSource', function(data) {
         console.log('A client sent us this dumb message:', data.message);
-        scrapeMultiple();
+        getMultipleSources();
     });
 
 });
@@ -111,11 +112,11 @@ var urls = [
     ['http://www.bbc.com/news/', '#comp-top-story-1 .title-link__title-text']
   ];
 
-function scrapeMultiple(){
+function getMultipleSources(){
   
 
   var promises = urls.map(scrapeNews);
-  var newsPosArr = [];
+ // var newsPosArr = [];
   var matches = [];
   //var tagArr =[];
 
@@ -135,6 +136,30 @@ function scrapeMultiple(){
       console.error(err);
     });
 
+}
+
+function getSingleSource(){
+  var promises = scrapeSingle();
+  //var newsPosArr = [];
+  var matches = [];
+  //var tagArr =[];
+
+  Promise.all(promises)
+    .then(function(headlines) {
+      console.log('All news loaded', headlines);
+      newsPosArr = getPOS(headlines);
+      io.emit('sendHeadlines', headlines );
+
+      
+    }).then(function() {
+      log('step two');
+      var remix = generateHeadline(newsPosArr);
+      io.emit('sendRemix', remix.toString());
+
+    })
+    .catch(function(err) {
+      console.error(err);
+    });
 
 
 }
@@ -168,37 +193,36 @@ function scrapeNews(url) {
 }
 
 function scrapeSingle(url){
-  var headlines = [];
-  x("http://www.nytimes.com/", '.theme-summary .story-heading', [{
-     title: '@text'
-   }])((err, obj) => {
-     if(err) {
-       callback(err);
-     }
-     else {
-      // obj.forEach((item) => {
-      for (var n=0; n< 5; n++){
-         //console.log(obj[n].title);
-         headlines.push(obj[n].title);
-       }
-       console.log(headlines);
-       newsPosArr = getPOS(headlines);
-       var remix = generateHeadline(newsPosArr);
-       //console.log(remix);
-  
-       io.emit('sendRemix', remix.toString());
-       io.emit('sendHeadlines', headlines );
-       callback(null, headlines) // do something with the objects?
-     }   
-   })
+  return new Promise(function(resolve, reject) {
+    var headlines = [];
+    x("http://www.nytimes.com/", '.theme-summary .story-heading', [{
+       title: '@text'
+     }])((err, obj) => {
+
+       if(err) {
+         callback(err);
+       } else {
+        // obj.forEach((item) => {
+        for (var n=0; n< 5; n++){
+           //console.log(obj[n].title);
+           headlines.push(obj[n].title);
+         }
+         console.log(headlines);
+         resolve(headlines);
+       //  callback(null, headlines) // do something with the objects?
+       }   
+     });
+  });
 }
+
+
 
 
 function getPOS(texts){
   log('getPOS go!');
   //var pos = require('pos');
   var news = texts;
-  newsPosArr = [];
+  //newsPosArr = [];
   for (var n in news){
   //  console.log(news[n])
     var title = news[n];

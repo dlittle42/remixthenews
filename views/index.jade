@@ -28,19 +28,21 @@ block content
 
 
 
-    document.getElementById("btn").addEventListener("click", function(){
+    document.addEventListener("click", function(){
     	console.log('clicked');
     	socket.emit('event', { message: 'Hey, I have an important message!' });
     });
 
-    document.getElementById("btn-single").addEventListener("click", function(){
+    document.getElementById("btn-single").addEventListener("click", function(e){
+      e.stopPropagation();
       console.log('clicked');
       $('#headlines').html(null);
       $('#source').html('NYTimes');
       socket.emit('getSingleSource', { message: 'Go get single site headlines' });
 
     });
-     document.getElementById("btn-multiple").addEventListener("click", function(){
+     document.getElementById("btn-multiple").addEventListener("click", function(e){
+      e.stopPropagation();
       console.log('clicked');
       $('#headlines').html(null);
       $('#source').html('Multiple Sources');

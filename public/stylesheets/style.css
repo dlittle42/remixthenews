@@ -1,6 +1,7 @@
 body {
   padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font-family: 'Lucida Grande', Helvetica, Arial, sans-serif;
+  font-size: 14px;
 }
 
 a {
@@ -8,5 +9,11 @@ a {
 }
 
 h1 {
+	font-family: 'Roboto Slab', Helvetica, Arial, sans-serif;
+	font-size: 60px;
+	font-weight: 700;
 	text-transform: uppercase;
+	line-height: 55px;
+	color: rgb(55, 55, 55);
+	/*word-spacing: .2em;*/
 }
