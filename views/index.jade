@@ -3,13 +3,17 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
+  h3#source Multiple sources
   ul#headlines
-  button#btn Send
+  button#btn Refresh
+  button#btn-multiple Multiple
+  button#btn-single Single
   script(src='http://code.jquery.com/jquery-3.1.1.js')
   script(src="/socket.io/socket.io.js")
   script.
     var socket = io('//localhost:3000');
-    socket.on('socketToMe', function (data) {
+    socket.on('sendHeadlines', function (data) {
+      console.log('receiving Headlines');
       console.log(data);
       $.each(data, function() {
             $('#headlines').append('<li>' + this + '</li>');
@@ -21,8 +25,26 @@ block content
       $('h1').text(data);
      
     });
+
+
+
     document.getElementById("btn").addEventListener("click", function(){
     	console.log('clicked');
     	socket.emit('event', { message: 'Hey, I have an important message!' });
+    });
+
+    document.getElementById("btn-single").addEventListener("click", function(){
+      console.log('clicked');
+      $('#headlines').html(null);
+      $('#source').html('NYTimes');
+      socket.emit('getSingleSource', { message: 'Go get single site headlines' });
+
+    });
+     document.getElementById("btn-multiple").addEventListener("click", function(){
+      console.log('clicked');
+      $('#headlines').html(null);
+      $('#source').html('Multiple Sources');
+      socket.emit('getMultipleSource', { message: 'Go get multiple site headlines' });
+
     });
     

@@ -11,12 +11,17 @@ var Xray = require('x-ray')
 var util = require('util')
 ///
 
+//for NLP
+var pos = require('pos');
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+
+var debug = false;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -71,20 +76,109 @@ app.use(function(err, req, res, next) {
 
 io.on('connection', function(socket) {  
 
-   // socket.emit('socketToMe', 'A new user has joined!' );
+   // socket.emit('sendHeadlines', 'A new user has joined!' );
+    scrapeMultiple();
 
     socket.on('event', function(data) {
         console.log('A client sent us this dumb message:', data.message);
-        var remix  = generateHeadline();
+        var remix  = generateHeadline(newsPosArr);
         socket.emit('sendRemix', remix.toString());
     });
+
+
+    socket.on('getSingleSource', function(data) {
+        console.log('A client sent us this dumb message:', data.message);
+        scrapeSingle();
+    });
+
+    socket.on('getMultipleSource', function(data) {
+        console.log('A client sent us this dumb message:', data.message);
+        scrapeMultiple();
+    });
+/*
+    socket.on('single', function(data) {
+        console.log('From single function', data.message);
+        var remix  = generateHeadline(newsPosArr);
+        socket.emit('sendRemix', remix.toString());
+    });
+    */
 });
 
 module.exports = {app: app, server: server};
 
-
-
 var x = new Xray()
+var urls = [
+    //['http://www.nytimes.com/','h1 a'],
+   // ['http://www.nytimes.com/','.lede a'],
+    ['http://www.nytimes.com/','#top-news .story-heading a'],
+    ['http://www.cnn.com/', '.cd__headline-text'],
+    ['http://www.wsj.com/', '.wsj-headline-link'],
+   // ['http://www.foxnews.com/', '.primary h1 a'],
+    ['http://www.washingtonpost.com/', '.headline a'],
+    ['http://www.bbc.com/news/', '#comp-top-story-1 .title-link__title-text']
+  ];
+
+function scrapeMultiple(){
+  
+
+  var promises = urls.map(scrapeNews);
+  var newsPosArr = [];
+  var matches = [];
+  //var tagArr =[];
+
+  Promise.all(promises)
+    .then(function(headlines) {
+      console.log('All news loaded', headlines);
+      newsPosArr = getPOS(headlines);
+
+
+      console.log(Object.keys(io.sockets.connected).length);
+/*
+      if(isConnected()){
+        socket.emit('sendHeadlines', headlines );
+      }else{
+        io.on('connection', function(socket) { 
+
+          console.log("NOW??"+Object.keys(io.sockets.connected).length);
+          socket.emit('sendHeadlines', headlines );
+        });
+      }
+      */
+
+      io.emit('sendHeadlines', headlines );
+      
+    }).then(function() {
+      log('step two');
+      var remix = generateHeadline(newsPosArr);
+      /*
+      if(isConnected()){
+        socket.emit('sendRemix', remix.toString());
+      }else{
+        io.on('connection', function(socket) { 
+          socket.emit('sendRemix', remix.toString());
+        });
+      }
+      */
+      io.emit('sendRemix', remix.toString());
+      
+
+
+    })
+    .catch(function(err) {
+      console.error(err);
+    });
+
+
+
+}
+
+function isConnected(){
+  if (Object.keys(io.sockets.connected).length >0 ){
+    return true;
+  }else{
+    return false;
+  }
+}
 
 
 function scrapeNews(url) {
@@ -98,11 +192,13 @@ function scrapeNews(url) {
         else
           resolve(obj[0].title);
 
+
+
     });
   });
 }
 
-function scrapeSingleSite(url){
+function scrapeSingle(url){
   var headlines = [];
   x("http://www.nytimes.com/", '.theme-summary .story-heading', [{
      title: '@text'
@@ -117,118 +213,52 @@ function scrapeSingleSite(url){
          headlines.push(obj[n].title);
        }
        console.log(headlines);
-       callback(null, obj) // do something with the objects?
+       newsPosArr = getPOS(headlines);
+       var remix = generateHeadline(newsPosArr);
+       //console.log(remix);
+  /*
+       if(isConnected()){
+          console.log('ALREADY CONNECTED!!!!')
+          socket.emit('sendRemix', remix.toString());
+          socket.emit('sendHeadlines', headlines );
+       }else{
+        
+       
+         io.on('connection', function(socket) { 
+          socket.emit('sendRemix', remix.toString());
+          socket.emit('sendHeadlines', headlines );
+
+        });
+       }
+       */
+       io.emit('sendRemix', remix.toString());
+          io.emit('sendHeadlines', headlines );
+       callback(null, headlines) // do something with the objects?
      }   
    })
 }
 
-
-
-
-
-var urls = [
-  //['http://www.nytimes.com/','h1 a'],
- // ['http://www.nytimes.com/','.lede a'],
-  ['http://www.nytimes.com/','#top-news .story-heading a'],
-  ['http://www.cnn.com/', '.cd__headline-text'],
-  ['http://www.wsj.com/', '.wsj-headline-link'],
- // ['http://www.foxnews.com/', '.primary h1 a'],
-  ['http://www.washingtonpost.com/', '.headline a'],
-  ['http://www.bbc.com/news/', '#comp-top-story-1 .title-link__title-text']
-];
-
-
-
-//// Run Promise to scrape 5 sites 0r....
-/*
-var promises = urls.map(scrapeNews);
-var newsPosArr = [];
-var matches = [];
-//var tagArr =[];
-
-Promise.all(promises)
-  .then(function(headlines) {
-    console.log('All news loaded', headlines);
-    getPOS(headlines)
-
-    io.on('connection', function(socket) { 
-      socket.emit('socketToMe', headlines );
-    });
-  }).then(function() {
-    console.log('step two');
-    var remix = generateHeadline();
-    io.on('connection', function(socket) { 
-      socket.emit('sendRemix', remix.toString());
-    });
-
-
-  })
-  .catch(function(err) {
-    console.error(err);
-  });
-*/
-
-
 /// .... or just call one site for 5 headlines
-scrapeSingleSite();
+//scrapeSingle();
 
 
 function getPOS(texts){
-  var pos = require('pos');
+  log('getPOS go!');
+  //var pos = require('pos');
   var news = texts;
+  newsPosArr = [];
   for (var n in news){
   //  console.log(news[n])
     var title = news[n];
     var words = new pos.Lexer().lex(title);
     var taggedWords = new pos.Tagger().tag(words);
-    console.dir(taggedWords)
+    if (debug) console.dir(taggedWords)
     newsPosArr.push([ urls[n][0], title, taggedWords]);
-    /*
-    for (i in taggedWords) {
-        var taggedWord = taggedWords[i];
-        var word = taggedWord[0];
-        var tag = taggedWord[1];
 
-        console.log(word + " /" + tag);
-    }
-    */
   }
-  console.log('------------------------')
-  console.log(newsPosArr)
-/*
-  console.log('------------------------')
-  console.log('------------------------')
-  console.log('------------------------')
-  console.log(newsPosArr[0][2][1][0])
-*/
-console.log('------------------------>>>')
- // tagArr = chooseRandomModel(newsPosArr);
-  //console.log("============   RANDOM  STRUCTURE  ================")
-  //console.log(tagArr)
-  //console.log("============   END RANDOM  STRUCTURE  ================")
-  console.log('++++++++++++++')
- // console.log(buildPos(newsPosArr, tagArr));
 
-  /*
-  var speak = require('speakeasy-nlp');
-  console.log(speak.classify('NJ commuter train hit platform'));
-  console.log('------------------------')
-  */
-/*
-  for (var n in news){
-    console.log(news(n))
-    var words = new pos.Lexer().lex(news(n));
-    var taggedWords = new pos.Tagger().tag(words);
-    console.dir(taggedWords)
-    for (i in taggedWords) {
-        var taggedWord = taggedWords[i];
-        var word = taggedWord[0];
-        var tag = taggedWord[1];
+  return newsPosArr;
 
-        console.log(word + " /" + tag);
-    }
-  }
-*/
 }
 
 function chooseRandomModel(arr){
@@ -247,22 +277,23 @@ function buildPos(news, pos){
     var word = pos[v][0];
     
     var term = [];
-    term.push(word);
+  //  term.push(word);
     
 
-console.log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
+    log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
 
     for (var n in news){
     
       var words = news[n][2];
      // console.log(words)
       for (i in words) {
-          var wordPos = words[i][1];
-          if (wordPos == pos[v][1]) {
-            var matchWord = words[i][0];
-            var tag = wordPos;
-            console.log(matchWord + " /" + tag);
-            term.push(matchWord);
+          var tag = words[i][1];
+          var word = words[i][0];
+
+         // if (tag == pos[v][1] && term.indexOf(word) != -1) {
+          if (tag == pos[v][1]){
+            log('adding ' + word + " /" + tag);
+            term.push(word);
           }
           
 
@@ -273,11 +304,8 @@ console.log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
 
   }
 
-  console.log("************      MATCHES     **********************    ");
-  console.log(matches);
-      console.log("============   RANDOM  STRUCTURE  ================")
- // console.log(tagArr)
-  console.log("============   END RANDOM  STRUCTURE  ================")
+  //console.log("************      MATCHES     **********************    ");
+ // console.log(matches);
 
 
   return matches;
@@ -285,13 +313,13 @@ console.log("@@@@@ FIND MATCH FOR "+ pos[v][1]+" @@@@@@@@@@@@@@");
 
 }
 
-function generateHeadline(){
+function generateHeadline(arr){
   matches = []
-  var tagArr = chooseRandomModel(newsPosArr);
-  console.log("============   RANDOM  STRUCTURE  ================")
-  console.log(tagArr)
-  buildPos(newsPosArr, tagArr);
-  console.log("************      MAKE SENTENCE     **********************    ");
+  var tagArr = chooseRandomModel(arr);
+  log("============   RANDOM  STRUCTURE  ================")
+  log(tagArr)
+  buildPos(arr, tagArr);
+  log("************      MAKE SENTENCE     **********************    ");
   var remix = buildHeadline(matches);
 
  return remix;
@@ -300,15 +328,35 @@ function generateHeadline(){
 
 function buildHeadline(matches){
   // choose random word from each POS array
-  console.log(matches.length);
+  log("Word Count = "+ matches.length);
   var newHeadline= [];
-  console.log("NEW HEADLINE ARR RESET??? "+ newHeadline)
+  log("NEW HEADLINE ARR RESET??? "+ newHeadline)
   for (var n in matches){
-    
+    /*
     var len = getRandomInt(0, matches[n].length-1);
     console.log("-- len = "+ len);
     console.log(matches[n][len]);
-    newHeadline.push(matches[n][len]);
+    var nextWord = matches[n][len];
+    while (newHeadline.indexOf(nextWord) != 1) {
+        text += "The number is " + i;
+        i++;
+    }
+    */
+
+    // eliminate duplicate terms in new sentence
+    do {
+      var len = getRandomInt(0, matches[n].length-1);
+      log("-- len = "+ len);
+      log(matches[n][len]);
+      var nextWord = matches[n][len];
+    } while (newHeadline.indexOf(nextWord) != -1);
+  //  if (newHeadline.indexOf(nextWord) != 1 ){
+
+      newHeadline.push(nextWord);
+  //  }else{
+  //    console.log('Duplicate Word! '+ nextWord)
+  //  }
+    
 
   }
   console.log(newHeadline.join(" "));
@@ -320,4 +368,17 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function log(val){
+  if(debug) console.log(val);
+}
 
+
+ //// Run Promise to scrape 5 sites 0r....
+scrapeMultiple();
+
+/// .... or just call one site for 5 headlines
+//scrapeSingle();
+
+
+
+//console.log(new pos.Lexer().lex("I made $5.60 today in 1 hour of work.  The E.M.T.'s were on time, but only barely.").toString());
