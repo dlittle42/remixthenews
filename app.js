@@ -106,6 +106,7 @@ var urls = [
    // ['http://www.nytimes.com/','.lede a'],
     ['http://www.nytimes.com/','#top-news .story-heading a'],
     ['http://www.cnn.com/', '.cd__headline-text'],
+  //  ['http://www.cnn.com/', '.cd__headline a span strong'],
     ['http://www.wsj.com/', '.wsj-headline-link'],
    // ['http://www.foxnews.com/', '.primary h1 a'],
     ['http://www.washingtonpost.com/', '.headline a'],

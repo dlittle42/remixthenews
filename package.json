@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node server.js"
   },
+  "main": "server.js",
   "dependencies": {
     "bluebird": "^3.4.6",
     "body-parser": "~1.15.1",
